@@ -77,8 +77,12 @@ export class Helper {
 
   static getCurrentTime(): string {
     const now = new Date();
-    const jam = now.getHours().toString().padStart(2, '0');
-    const menit = now.getMinutes().toString().padStart(2, '0');
-    return `${jam}:${menit}`;
+    const formatter = new Intl.DateTimeFormat('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return formatter.format(now).replace('.', ':');
   }
 }

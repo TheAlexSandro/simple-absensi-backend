@@ -188,7 +188,7 @@ export class AppService {
           const absensi = Helper.getStatus(waktu, cTime[0], cTime[1]);
           absen.push({
             id: absen.length + 1,
-            waktu,
+            waktu: `${waktu} UTC`,
             status: absensi,
           });
           result['absen'] = absen;
