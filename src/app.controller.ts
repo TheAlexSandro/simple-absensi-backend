@@ -8,6 +8,12 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Public()
+  @Get('/ping')
+  ping(@Res() res: Response): void {
+    return this.appService.ping(res);
+  }
+
+  @Public()
   @Post('generateAuthToken')
   generateAuthToken(@Res() res: Response): void {
     return this.appService.generateAuthToken(res);

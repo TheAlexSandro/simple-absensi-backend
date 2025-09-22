@@ -10,6 +10,10 @@ import { Tokenify } from './resources/helper/Tokenify';
 export class AppService {
   constructor(private readonly tokenify: Tokenify) {}
 
+  ping(@Res() res: Response) {
+    return Helper.response(res, HttpStatus.OK, true, 'Pong!');
+  }
+
   generateAuthToken(@Res() res: Response) {
     const result = this.tokenify.generateAuthToken(res);
     return Helper.response(res, HttpStatus.OK, true, 'Success!', null, result['auth_token']);
