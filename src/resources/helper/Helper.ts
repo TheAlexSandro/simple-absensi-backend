@@ -72,7 +72,7 @@ export class Helper {
     if (menit >= masuk && menit <= terlambat) return 'terlambat';
     if (menit >= izinMulai && menit <= izinAkhir) return 'izin keluar';
     if (menit >= keluar && menit <= lemburAkhir) return 'lembur';
-    return 'unknown';
+    return 'di luar jam kerja';
   }
 
   static getCurrentTime(): string {
