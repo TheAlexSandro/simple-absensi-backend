@@ -21,6 +21,7 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
+    const req = context.switchToHttp().getRequest<Request>();
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -29,9 +30,7 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
     try {
       const auth_token = request.body['auth_token'] as string;
-      const isApproved = await this.tokenify.verifyAuthToken(
-        auth_token,
-      );
+      const isApproved = await this.tokenify.verifyAuthToken(req, auth_token);
       if (!isApproved) {
         Helper.response(
           res,

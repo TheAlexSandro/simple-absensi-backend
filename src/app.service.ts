@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Res, Req } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { RedisCache } from './resources/database/Redis';
 import { Helper } from './resources/helper/Helper';
@@ -7,12 +7,6 @@ import { Password } from './resources/helper/Password';
 import { Tokenify } from './resources/helper/Tokenify';
 import { Spreadsheet } from './resources/database/Spreadsheets';
 
-type UserAbsen = {
-  user_id: string;
-  nama: string;
-  jabatan: string;
-};
-
 @Injectable()
 export class AppService {
   constructor(
@@ -20,11 +14,11 @@ export class AppService {
     private readonly sheets: Spreadsheet,
   ) {}
 
-  ping(@Res() res: Response) {
+  ping(res: Response) {
     return Helper.response(res, HttpStatus.OK, true, 'Pong!');
   }
 
-  generateAuthToken(@Res() res: Response) {
+  generateAuthToken(res: Response) {
     const result = this.tokenify.generateAuthToken(res);
     return Helper.response(
       res,
@@ -36,7 +30,7 @@ export class AppService {
     );
   }
 
-  signIn(@Res() res: Response, id: string | null, password: string | null) {
+  signIn(res: Response, id: string | null, password: string | null) {
     if (!id || !password)
       return Helper.response(
         res,
@@ -90,13 +84,13 @@ export class AppService {
     });
   }
 
-  signOut(@Req() req: Request, @Res() res: Response) {
+  signOut(req: Request, res: Response) {
     this.tokenify.removeAccessToken(req);
     return Helper.response(res, HttpStatus.OK, true, 'Success!');
   }
 
   register(
-    @Res() res: Response,
+    res: Response,
     nama: string | null,
     jabatan: string | null,
     id: string | null,
@@ -136,7 +130,7 @@ export class AppService {
     });
   }
 
-  removeUser(@Res() res: Response, id: string | null) {
+  removeUser(res: Response, id: string | null) {
     if (!id)
       return Helper.response(
         res,
@@ -169,7 +163,7 @@ export class AppService {
     });
   }
 
-  getAllUser(@Res() res: Response) {
+  getAllUser(res: Response) {
     RedisCache.getAllAccount('account-', (error, data) => {
       if (data?.length == 0)
         return Helper.response(
@@ -185,7 +179,7 @@ export class AppService {
     });
   }
 
-  verify(@Req() req: Request, @Res() res: Response) {
+  verify(req: Request, res: Response) {
     this.tokenify.verifyAccessToken(req, (error, result) => {
       if (error)
         return Helper.response(
@@ -215,7 +209,7 @@ export class AppService {
     });
   }
 
-  absen(@Res() res: Response, id: string | null) {
+  absen(res: Response, id: string | null) {
     if (!id)
       return Helper.response(
         res,

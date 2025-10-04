@@ -1,5 +1,5 @@
 import { Hash } from './Hash';
-import { Injectable, Req, Res } from '@nestjs/common';
+import { Injectable, } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { RedisCache } from '../database/Redis';
 import { Helper } from './Helper';
@@ -9,9 +9,11 @@ type Callback<T> = (error: string | null, result: T) => void;
 
 @Injectable()
 export class Tokenify {
-  verifyAuthToken(auth_token: string): Promise<boolean> {
+  verifyAuthToken(req: Request, auth_token: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (!auth_token) return resolve(false);
+      const getCookie = req.cookies['auth_token'];
+      if (!getCookie) return resolve(false);
       RedisCache.main()
         .get(`auth_token-${auth_token}`)
         .then((result) => {
@@ -29,7 +31,7 @@ export class Tokenify {
   }
 
   verifyAccessToken(
-    @Req() req: Request,
+    req: Request,
     callback: Callback<null | boolean | string>,
   ): void {
     const getToken = req.cookies['access_token'];
@@ -45,7 +47,7 @@ export class Tokenify {
       });
   }
 
-  generateAuthToken(@Res() res: Response): object {
+  generateAuthToken(res: Response): object {
     const duration = Number(process.env['REDIS_EX']);
     const ress = Hash.generateToken() as HashToken;
     RedisCache.main().set(
@@ -54,16 +56,25 @@ export class Tokenify {
       'EX',
       duration,
     );
+    res.cookie('auth_token', ress['auth_token'], {
+      maxAge: Number(process.env['COOKIE_EX']),
+      secure: true,
+      httpOnly: true,
+      path: '/',
+      domain: String(process.env['COOKIE_DOMAIN']),
+      sameSite: String(process.env['COOKIE_SAME_SITE']) as
+        | 'lax'
+        | 'none'
+        | 'strict',
+    });
     return { auth_token: ress['auth_token'] };
   }
 
-  generateAccessToken(@Res() res: Response, id: string): void {
+  generateAccessToken(res: Response, id: string): void {
     const token = Helper.generateID(50, 'alphanumeric');
     RedisCache.main().set(
       `access_token-${token}`,
       JSON.stringify({ token, user_id: id }),
-      'EX',
-      Number(process.env['REDIS_EX']),
     );
     res.cookie(`access_token`, token, {
       httpOnly: true,
@@ -77,7 +88,7 @@ export class Tokenify {
     });
   }
 
-  removeAccessToken(@Req() req: Request): void {
+  removeAccessToken(req: Request): void {
     const getToken = req.cookies['access_token'];
     if (!getToken) return;
     RedisCache.main().del(`access_token-${getToken}`);
