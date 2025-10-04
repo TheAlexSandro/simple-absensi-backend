@@ -117,15 +117,24 @@ export class Spreadsheet {
         const updates: Promise<any>[] = [];
 
         data.forEach((s: any) => {
+          //@ts-ignore
           const existing = rows.find((r) => r._rawData[0] === s.id);
           if (existing) {
+            //@ts-ignore
             existing._rawData[1] = s.nama;
+            //@ts-ignore
             existing._rawData[2] = s.jabatan;
+            //@ts-ignore
             existing._rawData[3] = this.tanggal;
+            //@ts-ignore
             existing._rawData[4] = String(s.masuk);
+            //@ts-ignore
             existing._rawData[5] = String(s.terlambat);
+            //@ts-ignore
             existing._rawData[6] = String(s.lembur);
+            //@ts-ignore
             existing._rawData[7] = String(s.tidakMasuk);
+            //@ts-ignore
             existing._rawData[8] = s.persentase;
             updates.push(existing.save());
           } else {
@@ -215,15 +224,24 @@ export class Spreadsheet {
         const updates: Promise<any>[] = [];
 
         data.forEach((s: any) => {
+          //@ts-ignore
           const existing = rows.find((r) => r._rawData[0] === s.id);
           if (existing) {
+            //@ts-ignore
             existing._rawData[1] = s.nama;
+            //@ts-ignore
             existing._rawData[2] = s.jabatan;
+            //@ts-ignore
             existing._rawData[3] = this.tanggal;
+            //@ts-ignore
             existing._rawData[4] = String(s.masuk);
+            //@ts-ignore
             existing._rawData[5] = String(s.terlambat);
+            //@ts-ignore
             existing._rawData[6] = String(s.lembur);
+            //@ts-ignore
             existing._rawData[7] = String(s.tidakMasuk);
+            //@ts-ignore
             existing._rawData[8] = s.persentase;
             updates.push(existing.save());
           } else {
