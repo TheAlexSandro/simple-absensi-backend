@@ -9,7 +9,7 @@ export default {
     },
     USER_FOUND: {
       code: "USER_FOUND",
-      message: "This user is already in the database."
+      message: "Pengguna sudah ada."
     }
   },
   "404": {

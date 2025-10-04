@@ -8,6 +8,16 @@ interface Absensi {
   keluar?: string;
   status_keluar?: string;
 }
+type Ident = 'id' | 'nama';
+type UserData = {
+  user_id: string;
+  data: {
+    user_id: string;
+    nama: string;
+    jabatan: string;
+    absent: any[];
+  };
+};
 
 export class Helper {
   static response(
@@ -88,9 +98,33 @@ export class Helper {
   static getTanggal(): string {
     const now = new Date();
     const year = now.getFullYear();
-    const mon = String(now.getMonth()).padStart(0, "2");
-    const dt = String(now.getDate()).padStart(0, "2");
+    const mon = String(now.getMonth()).padStart(0, '2');
+    const dt = String(now.getDate()).padStart(0, '2');
 
-    return `${year}-${mon}-${dt}`
+    return `${year}-${mon}-${dt}`;
+  }
+
+  static isDuplicate(
+    type: Ident,
+    nama: string | null,
+    id: string | null,
+    jabatan: string,
+    data: UserData[] | undefined,
+  ) {
+    if (!data) return false;
+    if (type == 'nama') {
+      return data.some(
+        (item) =>
+          item.data.nama.toLowerCase().trim() ===
+            String(nama).toLowerCase().trim() &&
+          item.data.jabatan.toLowerCase().trim() === jabatan.toLowerCase().trim(),
+      );
+    } else {
+      return data.some(
+        (item) =>
+          item.user_id.toLowerCase().trim() ===
+            String(id).toLowerCase().trim()
+      );
+    }
   }
 }

@@ -116,17 +116,40 @@ export class AppService {
           .replace('{accept}', 'admin, guru, siswa, staff'),
         errors['404']['INVALID_VALUE_IN_PARAMETER'].code,
       );
+    RedisCache.getAllAccount(`account-`, (e, r) => {
+      if (r?.length == 0)
+        return Helper.response(
+          res,
+          HttpStatus.OK,
+          false,
+          'Tidak pernah ada pengguna yang terdaftar.',
+          errors['404']['USER_NOT_FOUND'].code,
+        );
 
-    const accID = id ? id : Helper.generateID(9, 'numeric');
-    const data = {
-      user_id: accID,
-      nama,
-      jabatan,
-      absent: [],
-    };
-    RedisCache.main().set(`account-${accID}`, JSON.stringify(data));
-    return Helper.response(res, HttpStatus.OK, true, 'Success!', null, {
-      user_id: accID,
+      const userList = r?.filter((item) => item.user_id != 'admin');
+      const finds = id
+        ? Helper.isDuplicate('id', null, id, jabatan, userList)
+        : Helper.isDuplicate('nama', nama, null, jabatan, userList);
+      if (finds)
+        return Helper.response(
+          res,
+          HttpStatus.OK,
+          false,
+          errors['400']['USER_FOUND'].message,
+          errors['400']['USER_FOUND'].code,
+        );
+
+      const accID = id ? id : Helper.generateID(9, 'numeric');
+      const data = {
+        user_id: accID,
+        nama,
+        jabatan,
+        absent: [],
+      };
+      RedisCache.main().set(`account-${accID}`, JSON.stringify(data));
+      return Helper.response(res, HttpStatus.OK, true, 'Success!', null, {
+        user_id: accID,
+      });
     });
   }
 
@@ -173,9 +196,16 @@ export class AppService {
           'Tidak pernah ada pengguna yang terdaftar.',
           errors['404']['USER_NOT_FOUND'].code,
         );
-      const userList = data?.filter((item) => item.user_id != "admin")
+      const userList = data?.filter((item) => item.user_id != 'admin');
 
-      return Helper.response(res, HttpStatus.OK, true, 'Success!', null, userList);
+      return Helper.response(
+        res,
+        HttpStatus.OK,
+        true,
+        'Success!',
+        null,
+        userList,
+      );
     });
   }
 

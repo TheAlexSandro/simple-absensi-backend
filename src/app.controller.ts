@@ -48,6 +48,7 @@ export class AppController {
     return this.appService.removeUser(res, id);
   }
 
+  @Public()
   @Post('getAllUser')
   getAllUser(@Res() res: Response): void {
     return this.appService.getAllUser(res);
