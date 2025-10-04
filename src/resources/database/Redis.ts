@@ -33,4 +33,42 @@ export class RedisCache {
         return callback(error, null);
       });
   }
+
+  static getAllAccount(
+    prefix: string,
+    callback: (err: any, data?: { user_id: string; data: any }[]) => void,
+  ) {
+    let cursor = '0';
+    let keys: string[] = [];
+
+    const scanNext = () => {
+      this.main()
+        .scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 100)
+        .then((result) => {
+          cursor = result[0];
+          keys = keys.concat(result[1]);
+
+          if (cursor !== '0') {
+            return scanNext();
+          }
+
+          if (keys.length === 0) {
+            return callback(null, []);
+          }
+
+          return this.main()
+            .mget(keys)
+            .then((values) => {
+              const data = keys.map((k, i) => ({
+                user_id: k.replace(`account-`, ''),
+                data: values[i] ? JSON.parse(values[i]) : null,
+              }));
+              callback(null, data);
+            });
+        })
+        .catch((err) => callback(err));
+    };
+
+    scanNext();
+  }
 }

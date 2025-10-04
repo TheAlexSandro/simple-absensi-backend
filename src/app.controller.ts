@@ -8,7 +8,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Public()
-  @Get('/ping')
+  @Get('ping')
   ping(@Res() res: Response): void {
     return this.appService.ping(res);
   }
@@ -38,15 +38,25 @@ export class AppController {
     @Res() res: Response,
     @Body('nama') nama: string | null,
     @Body('jabatan') jabatan: string | null,
-    @Body('password') password: string | null,
+    @Body('id') id: string | null
   ): void {
-    return this.appService.register(res, nama, jabatan, password);
+    return this.appService.register(res, nama, jabatan, id);
   }
 
-  // @Post('verify')
-  // verify(@Req() req: Request, @Res() res: Response): void {
-  //   return this.appService.verify(req, res);
-  // }
+  @Post('removeUser')
+  removeUser(@Res() res: Response, @Body('id') id: string | null): void {
+    return this.appService.removeUser(res, id);
+  }
+
+  @Post('getAllUser')
+  getAllUser(@Res() res: Response): void {
+    return this.appService.getAllUser(res);
+  }
+
+  @Post('verify')
+  verify(@Req() req: Request, @Res() res: Response): void {
+    return this.appService.verify(req, res);
+  }
 
   @Post('absen')
   absen(@Res() res: Response, @Body('id') id: string | null): void {

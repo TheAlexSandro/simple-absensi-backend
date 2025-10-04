@@ -70,7 +70,6 @@ export class Helper {
 
     if (menit < masuk) return 'masuk';
     if (menit >= masuk && menit <= terlambat) return 'terlambat';
-    if (menit >= izinMulai && menit <= izinAkhir) return 'izin keluar';
     if (menit >= keluar && menit <= lemburAkhir) return 'lembur';
     return 'di luar jam kerja';
   }
@@ -84,5 +83,14 @@ export class Helper {
       hour12: false,
     });
     return formatter.format(now).replace('.', ':');
+  }
+
+  static getTanggal(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const mon = String(now.getMonth()).padStart(0, "2");
+    const dt = String(now.getDate()).padStart(0, "2");
+
+    return `${year}-${mon}-${dt}`
   }
 }

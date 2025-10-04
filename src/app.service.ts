@@ -5,10 +5,20 @@ import { Helper } from './resources/helper/Helper';
 import errors from './resources/errors/errors';
 import { Password } from './resources/helper/Password';
 import { Tokenify } from './resources/helper/Tokenify';
+import { Spreadsheet } from './resources/database/Spreadsheets';
+
+type UserAbsen = {
+  user_id: string;
+  nama: string;
+  jabatan: string;
+};
 
 @Injectable()
 export class AppService {
-  constructor(private readonly tokenify: Tokenify) {}
+  constructor(
+    private readonly tokenify: Tokenify,
+    private readonly sheets: Spreadsheet,
+  ) {}
 
   ping(@Res() res: Response) {
     return Helper.response(res, HttpStatus.OK, true, 'Pong!');
@@ -16,7 +26,14 @@ export class AppService {
 
   generateAuthToken(@Res() res: Response) {
     const result = this.tokenify.generateAuthToken(res);
-    return Helper.response(res, HttpStatus.OK, true, 'Success!', null, result['auth_token']);
+    return Helper.response(
+      res,
+      HttpStatus.OK,
+      true,
+      'Success!',
+      null,
+      result['auth_token'],
+    );
   }
 
   signIn(@Res() res: Response, id: string | null, password: string | null) {
@@ -41,7 +58,7 @@ export class AppService {
           error,
           errors['400']['BAD_REQUEST'].code,
         );
-      if (!result)
+      if (!result || !result['password'])
         return Helper.response(
           res,
           HttpStatus.OK,
@@ -61,7 +78,7 @@ export class AppService {
           errors['401']['UNAUTHORIZED_ACCESS'].code,
         );
 
-      //this.tokenify.generateAcessToken(id);
+      this.tokenify.generateAccessToken(res, id);
       return Helper.response(
         res,
         HttpStatus.OK,
@@ -74,7 +91,7 @@ export class AppService {
   }
 
   signOut(@Req() req: Request, @Res() res: Response) {
-    //this.tokenify.removeAccessToken(req, res);
+    this.tokenify.removeAccessToken(req);
     return Helper.response(res, HttpStatus.OK, true, 'Success!');
   }
 
@@ -82,16 +99,16 @@ export class AppService {
     @Res() res: Response,
     nama: string | null,
     jabatan: string | null,
-    password: string | null,
+    id: string | null,
   ) {
-    if (!nama || !jabatan || !password)
+    if (!nama || !jabatan)
       return Helper.response(
         res,
         HttpStatus.OK,
         false,
         errors['404']['EMPTY_PARAMETER'].message.replace(
           '{param}',
-          'nama, jabatan, password',
+          'nama, jabatan',
         ),
         errors['404']['EMPTY_PARAMETER'].code,
       );
@@ -106,42 +123,97 @@ export class AppService {
         errors['404']['INVALID_VALUE_IN_PARAMETER'].code,
       );
 
-    const accID = Helper.generateID(8, 'numeric');
-    const enc = Password.encryptPassword(password);
-    const data = { password: `${enc['salt']}|${enc['hash']}`, absent: [] };
+    const accID = id ? id : Helper.generateID(9, 'numeric');
+    const data = {
+      user_id: accID,
+      nama,
+      jabatan,
+      absent: [],
+    };
     RedisCache.main().set(`account-${accID}`, JSON.stringify(data));
-    return Helper.response(res, HttpStatus.OK, true, 'Success!');
+    return Helper.response(res, HttpStatus.OK, true, 'Success!', null, {
+      user_id: accID,
+    });
   }
 
-  // verify(@Req() req: Request, @Res() res: Response) {
-  //   this.tokenify.verifyAccessToken(req, (error, result) => {
-  //     if (error)
-  //       return Helper.response(
-  //         res,
-  //         HttpStatus.OK,
-  //         false,
-  //         error,
-  //         errors['400']['BAD_REQUEST'].code,
-  //       );
-  //     if (!result)
-  //       return Helper.response(
-  //         res,
-  //         HttpStatus.OK,
-  //         false,
-  //         errors['401']['ACCESS_DENIED'].message,
-  //         errors['401']['ACCESS_DENIED'].code,
-  //       );
+  removeUser(@Res() res: Response, id: string | null) {
+    if (!id)
+      return Helper.response(
+        res,
+        HttpStatus.OK,
+        false,
+        errors['404']['EMPTY_PARAMETER'].message.replace('{param}', 'id'),
+        errors['404']['EMPTY_PARAMETER'].code,
+      );
 
-  //     return Helper.response(
-  //       res,
-  //       HttpStatus.OK,
-  //       true,
-  //       'Success!',
-  //       null,
-  //       result['absent'],
-  //     );
-  //   });
-  // }
+    RedisCache.getUser(id, (error, result) => {
+      if (error)
+        return Helper.response(
+          res,
+          HttpStatus.OK,
+          false,
+          error,
+          errors['400']['BAD_REQUEST'].code,
+        );
+      if (!result)
+        return Helper.response(
+          res,
+          HttpStatus.OK,
+          false,
+          'Pengguna tidak ditemukan.',
+          errors['404']['USER_NOT_FOUND'].code,
+        );
+
+      RedisCache.main().del(`account-${id}`);
+      return Helper.response(res, HttpStatus.OK, true, 'Pengguna dihapus!');
+    });
+  }
+
+  getAllUser(@Res() res: Response) {
+    RedisCache.getAllAccount('account-', (error, data) => {
+      if (data?.length == 0)
+        return Helper.response(
+          res,
+          HttpStatus.OK,
+          false,
+          'Tidak pernah ada pengguna yang terdaftar.',
+          errors['404']['USER_NOT_FOUND'].code,
+        );
+      const userList = data?.filter((item) => item.user_id != "admin")
+
+      return Helper.response(res, HttpStatus.OK, true, 'Success!', null, userList);
+    });
+  }
+
+  verify(@Req() req: Request, @Res() res: Response) {
+    this.tokenify.verifyAccessToken(req, (error, result) => {
+      if (error)
+        return Helper.response(
+          res,
+          HttpStatus.OK,
+          false,
+          error,
+          errors['400']['BAD_REQUEST'].code,
+        );
+      if (!result)
+        return Helper.response(
+          res,
+          HttpStatus.OK,
+          false,
+          errors['401']['ACCESS_DENIED'].message,
+          errors['401']['ACCESS_DENIED'].code,
+        );
+
+      return Helper.response(
+        res,
+        HttpStatus.OK,
+        true,
+        'Success!',
+        null,
+        result['absent'],
+      );
+    });
+  }
 
   absen(@Res() res: Response, id: string | null) {
     if (!id)
@@ -182,19 +254,44 @@ export class AppService {
               'Invalid time.',
               errors['400']['BAD_REQUEST'].code,
             );
-          const absen = result['absen'];
+          const absen = result['absent'];
           const cTime = time.split('|');
           const waktu = Helper.getCurrentTime();
           const absensi = Helper.getStatus(waktu, cTime[0], cTime[1]);
-          absen.push({
-            id: absen.length + 1,
-            waktu: `${waktu} UTC`,
+          const tgls = Helper.getTanggal();
+          const absenData = {
+            id: result['user_id'],
+            nama: result['nama'],
+            jabatan: result['jabatan'],
+            waktu: `${tgls} ${waktu} GMT+7`,
             status: absensi,
-          });
-          result['absen'] = absen;
+          };
+
+          absen.push(absenData);
+          result['absent'] = absen;
+          this.sheets.setRekapHarian('HARIAN', absenData);
+          this.sheets.setRekapMingguan(
+            'HARIAN',
+            'MINGGUAN',
+            Number(process.env['TOTAL_HARI_MINGGUAN']),
+          );
+          const spl = tgls.split('-');
+          this.sheets.setRekapBulanan(
+            'MINGGUAN',
+            'BULANAN',
+            `${spl[0]}-${spl[1]}`,
+            Number(process.env['TOTAL_HARI_BULANAN']),
+          );
 
           RedisCache.main().set(`account-${id}`, JSON.stringify(result));
-          return Helper.response(res, HttpStatus.OK, true, 'Success!', null, result);
+          return Helper.response(
+            res,
+            HttpStatus.OK,
+            true,
+            'Success!',
+            null,
+            absenData,
+          );
         });
     });
   }
